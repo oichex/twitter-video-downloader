@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EFENİN AMK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Yükleniyor animasyonu */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">EFENİN AMK</h1>
+        
+        <form id="downloadForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tweet Linki</label>
+                <input type="text" id="urlInput" placeholder="https://twitter.com/..." 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <button type="submit" class="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition duration-200 font-semibold">
+                Videoyu Bul
+            </button>
+        </form>
+
+        <div id="loader" class="loader mt-4"></div>
+
+        <div id="errorMessage" class="hidden mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center"></div>
+
+        <div id="resultArea" class="hidden mt-6 text-center border-t pt-4">
+            <h3 id="videoTitle" class="font-semibold text-gray-800 mb-2 text-sm truncate"></h3>
+            <img id="videoThumb" src="" alt="Thumbnail" class="w-full rounded-lg mb-4 shadow-sm">
+            
+            <a id="downloadBtn" href="#" target="_blank" 
+               class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-200">
+                Videoyu İndir
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('downloadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const url = document.getElementById('urlInput').value;
+            const loader = document.getElementById('loader');
+            const resultArea = document.getElementById('resultArea');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Temizle
+            resultArea.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            loader.style.display = 'block';
+
+            try {
+                const formData = new FormData();
+                formData.append('url', url);
+
+                const response = await fetch('/get-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                loader.style.display = 'none';
+
+                if (response.ok) {
+                    // Başarılı
+                    document.getElementById('videoTitle').innerText = data.title;
+                    document.getElementById('videoThumb').src = data.thumbnail;
+                    document.getElementById('downloadBtn').href = data.download_url;
+                    resultArea.classList.remove('hidden');
+                } else {
+                    // Hata
+                    errorMessage.innerText = data.error || 'Bir hata oluştu.';
+                    errorMessage.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                loader.style.display = 'none';
+                errorMessage.innerText = 'Sunucuya bağlanırken hata oluştu.';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
